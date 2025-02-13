@@ -1,9 +1,10 @@
 import os
 import json
-from aiogram import Bot, Dispatcher, types
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram import Bot, Dispatcher, types, Router
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.context import FSMContext
+from aiogram.filters import Command, StateFilter
+from aiogram.fsm.state import StatesGroup, State
 import json
 
 import requests
@@ -38,7 +39,8 @@ mainPrompt = '''Ты — эксперт по анализу промтов. Тв
 user_task_state = {}
 bot = Bot(token=API_TOKEN)
 storage = MemoryStorage()
-dp = Dispatcher(bot, storage=storage)
+dp = Dispatcher(storage=storage)
+router = Router()
 tasks = {
     1: {
         'task': 'Составьте промт, который попросит ИИ провести глубокий анализ длинного текста: выделить ключевые идеи, определить скрытые подтексты и выявить аспекты, которые могут быть упущены при поверхностном прочтении.',
@@ -195,30 +197,33 @@ class UserState(StatesGroup):
     waiting_for_prompt = State()
 
 
-@dp.message_handler(commands=['start'])
-async def send_welcome(message: types.Message):
+@router.message(Command('start'))
+async def send_welcome(message: types.Message, state: FSMContext):
     await message.reply("Привет! Я помогу тебе улучшить навыки промпт-инжениринга.\nНачнем с первого задания:")
     user_id = message.from_user.id
     user_task_state[user_id] = 1
-    await send_task(message.chat.id)
+    await send_task(message.chat.id, state)
 
 
-async def send_task(chat_id):
-    task = list(tasks.items())[0]
-    await bot.send_message(chat_id, f"Задание:\n{task[0]}")
-    await UserState.waiting_for_prompt.set()
+async def send_task(chat_id, state: FSMContext):
+    task_number = 1
+    task = tasks[task_number]
+    a = tasks[task_number]['ideal_promt']
+    print(a)
+    await bot.send_message(chat_id, f"Задание {task_number}:\n{task['task']}")
+    await state.set_state(UserState.waiting_for_prompt)
 
 
-@dp.message_handler(state=UserState.waiting_for_prompt)
+@router.message(UserState.waiting_for_prompt)
 async def process_prompt(message: types.Message, state: FSMContext):
     user_prompt = message.text
     analysis = await analyze_prompt(user_prompt)
     await message.reply(f"Анализ вашего промпта:\n{analysis}")
 
     task = list(tasks.items())[0]
-    await message.reply(f"Идеальный промпт:\n{task[1]}")
+    await message.reply(f"Вариант хорошего промпта:\n{task[1]['ideal_promt']}")
 
-    await state.finish()
+    await state.clear()
 
 
 async def analyze_prompt(prompt):
@@ -227,7 +232,7 @@ async def analyze_prompt(prompt):
     payload = json.dumps({
         "messages": [
             {
-                "content": "Реши задачу: 2 + 2 = ",
+                "content": mainPrompt + 'Вот промпт пользователя, оцени его согласно вышенаписанному:' + prompt,
                 "role": "user"
             }
         ],
@@ -253,7 +258,8 @@ async def analyze_prompt(prompt):
         pass
 
 
+dp.include_router(router)
 if __name__ == '__main__':
-    from aiogram import executor
+    import asyncio
 
-    executor.start_polling(dp, skip_updates=True)
+    asyncio.run(dp.start_polling(bot, skip_updates=True))
