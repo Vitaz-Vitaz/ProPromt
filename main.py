@@ -199,40 +199,60 @@ class UserState(StatesGroup):
 
 @router.message(Command('start'))
 async def send_welcome(message: types.Message, state: FSMContext):
-    await message.reply("Привет! Я помогу тебе улучшить навыки промпт-инжениринга.\nНачнем с первого задания:")
     user_id = message.from_user.id
     user_task_state[user_id] = 1
-    await send_task(message.chat.id, state)
+    await message.reply("Привет! Я помогу тебе улучшить навыки промпт-инжениринга.\nНачнем с первого задания:")
+    await send_task(message.chat.id, user_id, state)
 
 
-async def send_task(chat_id, state: FSMContext):
-    task_number = 1
-    task = tasks[task_number]
-    a = tasks[task_number]['ideal_promt']
-    print(a)
-    await bot.send_message(chat_id, f"Задание {task_number}:\n{task['task']}")
+async def send_task(chat_id, user_id, state: FSMContext):
+    task_number = user_task_state.get(user_id, 1)
+    task = tasks.get(task_number)
+
+    if not task:
+        await bot.send_message(chat_id, "🎉 Поздравляем! Вы завершили все задания!")
+        return
+
+    await bot.send_message(chat_id, f"📝 Задание {task_number}:\n\n{task['task']}")
     await state.set_state(UserState.waiting_for_prompt)
 
 
 @router.message(UserState.waiting_for_prompt)
 async def process_prompt(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    current_task = user_task_state.get(user_id, 1)
+
+
     user_prompt = message.text
     analysis = await analyze_prompt(user_prompt)
-    await message.reply(f"Анализ вашего промпта:\n{analysis}")
+    print(analysis)
+    await message.reply(f"📊 Анализ вашего промпта:\n\n{analysis}")
 
-    task = list(tasks.items())[0]
-    await message.reply(f"Вариант хорошего промпта:\n{task[1]['ideal_promt']}")
+
+    task = tasks.get(current_task)
+    await message.reply(f"💡 Пример хорошего промпта:\n\n{task['ideal_promt']}")
+
+
+    next_task = current_task + 1
+    if next_task in tasks:
+        user_task_state[user_id] = next_task
+        await message.answer("➡️ Переходим к следующему заданию:")
+        await send_task(message.chat.id, user_id, state)
+    else:
+        await message.answer("🎉 Вы завершили все задания! Чтобы начать заново, нажмите /start")
 
     await state.clear()
 
 
 async def analyze_prompt(prompt):
+    print(111)
     url = "https://api.blackbox.ai/api/chat"
-
+    cont = mainPrompt + 'Вот промпт пользователя, оцени его согласно вышенаписанному:' + prompt
+    print(cont)
     payload = json.dumps({
         "messages": [
             {
-                "content": mainPrompt + 'Вот промпт пользователя, оцени его согласно вышенаписанному:' + prompt,
+                "content": cont,
                 "role": "user"
             }
         ],
