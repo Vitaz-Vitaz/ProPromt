@@ -9,7 +9,6 @@ import json
 import requests
 import re
 
-
 API_TOKEN = '7878235867:AAEM2ybsAy11nWQYtlgb4TVYTcKXr8K9cTY'
 mainPrompt = '''Ты — эксперт по анализу промтов. Твоя задача — сравнить пользовательский промт с идеальным промтом и предоставить краткий, структурированный отчёт, который включает:
 1. **Сравнительный анализ:**  
@@ -35,7 +34,6 @@ mainPrompt = '''Ты — эксперт по анализу промтов. Тв
 Пользовательский промт: [Вставьте текст пользовательского промта]  
 Идеальный промт: [Вставьте текст идеального промта]
 На основе предоставленных данных сформируй оценку и рекомендации.'''
-
 
 user_task_state = {}
 bot = Bot(token=API_TOKEN)
@@ -75,7 +73,7 @@ tasks = {
     7: {
         'task': 'Составьте промт для генерации научного отчёта по биоинформатике, включающего анализ ДНК-цепочек.',
         'ideal_promt': 'Создай научный отчёт по биоинформатике, в котором будет проведён анализ ДНК-цепочки. Определи повторяющиеся последовательности, мутации и возможные генетические аномалии. Используй Python и библиотеку BioPython.',
-        'data_for_solve': '[Последовательность ДНК: "AGCTTAGCTAATCG"]'
+        'data_for_solve': '[Последовательность ДНК: "AGCTTAGCTAATCG"]'},
     8: {
         'task': 'Создайте промт для автоматической генерации отчётов о продажах по заданным данным.',
         'ideal_promt': 'Напиши Python-скрипт, который принимает данные о продажах в формате CSV и генерирует структурированный отчёт с основными метриками, такими как общая выручка, средний чек и количество транзакций. Используй библиотеку pandas для анализа данных и matplotlib для визуализации результатов.',
@@ -89,7 +87,7 @@ tasks = {
     10: {
         'task': 'Создайте промт для предсказания цен на акции на основе исторических данных.',
         'ideal_promt': 'Напиши Python-скрипт, который анализирует исторические данные о ценах акций и предсказывает их будущее значение с использованием модели линейной регрессии. Объясни выбор модели и предобработку данных.',
-        'data_for_solve': 'Дата, Цена\n2024-01-01, 150\n2024-02-01, 155\n2024-03-01, 160'
+        'data_for_solve': 'Дата, Цена\n2024-01-01, 150\n2024-02-01, 155\n2024-03-01, 160'},
     11: {
         'task': 'Создай промт для анализа текстов и извлечения ключевых слов с использованием методов NLP.',
         'ideal_promt': 'Напиши Python-скрипт, который принимает текст и извлекает ключевые слова с использованием библиотеки NLTK. Объясни выбор методов и представь результаты в виде списка ключевых слов.',
@@ -193,12 +191,8 @@ tasks = {
 }
 
 
-
-
-
 class UserState(StatesGroup):
     waiting_for_prompt = State()
-
 
 
 @dp.message_handler(commands=['start'])
@@ -207,7 +201,6 @@ async def send_welcome(message: types.Message):
     user_id = message.from_user.id
     user_task_state[user_id] = 1
     await send_task(message.chat.id)
-
 
 
 async def send_task(chat_id):
@@ -226,7 +219,6 @@ async def process_prompt(message: types.Message, state: FSMContext):
     await message.reply(f"Идеальный промпт:\n{task[1]}")
 
     await state.finish()
-
 
 
 async def analyze_prompt(prompt):
@@ -251,7 +243,8 @@ async def analyze_prompt(prompt):
     try:
         response = requests.post(url, headers=headers, data=payload, timeout=10)
         s = response.text
-        s = s.replace(']', '').replace('[', '').replace('\\', '').replace('boxed{', '').replace('}', '').replace('*',                                                                                                    '')
+        s = s.replace(']', '').replace('[', '').replace('\\', '').replace('boxed{', '').replace('}', '').replace('*',
+                                                                                                                 '')
         return s
 
     except requests.exceptions.JSONDecodeError:
