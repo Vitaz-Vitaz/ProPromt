@@ -2,7 +2,7 @@ import math
 import pandas as pd
 
 # Исходные параметры
-N_total = 10000                # Общее количество пользователей
+N_total = 6728               # Общее количество пользователей
 R_ad = 5                      # Доход от рекламы (₽/мес)
 P_lite = 200                    # Цена подписки Lite (₽/мес)
 P_pro = 1200                    # Цена подписки PRO (₽/мес)
@@ -15,10 +15,10 @@ PackagePrice = 285000             # Цена пакета (₽)
 Salary_designer = 100000         # ЗП дизайнера (₽/мес)
 Salary_manager = 150000          # ЗП менеджера (₽/мес)
 Salary_programmer = 130000       # ЗП программиста (₽/мес)
-FreelanceRate = 60000           # Затраты на фрилансеров (₽/мес)
+FreelanceRate = 160000           # Затраты на фрилансеров (₽/мес)
 T_development = 3               # Время разработки (мес)
-ServerCost_dev = 20000           # Серверы во время разработки (₽/мес)
-ServerCost_prod = 15000         # Серверы после запуска (₽/мес)
+ServerCost_dev = 30000           # Серверы во время разработки (₽/мес)
+ServerCost_prod = 20000         # Серверы после запуска (₽/мес)
 Months = 12                     # Период расчёта (мес)
 
 # Конверсия пользователей
@@ -151,9 +151,18 @@ print(df_unit_economics)
 print('Инвест запрос')
 
 print('Затраты на фрилансера', FreelanceRate*3)
-print('ЗП дизайнера ', (Salary_designer*3)/3)
-print('ЗП менеджера', (Salary_manager*3)/3)
-print('ЗП программиста', (Salary_programmer*3)/3)
+print('ЗП дизайнера ', (Salary_designer*3)/2)
+print('ЗП менеджера', (Salary_manager*3)/2)
+print('ЗП программиста', (Salary_programmer*3)/2)
 print('Стоимость серверов', ServerCost_dev*3)
 
-print('Суммарная стоимость инвест запроса:', (FreelanceRate+Salary_designer/3+ Salary_manager/3+Salary_programmer/3+ServerCost_dev)*3 )
+conversia = 0.05
+cost_for_click = 10
+tochka_without_cost = round(BreakEven_Users, 2)
+cost_marketing = round(cost_for_click*(tochka_without_cost/conversia), 2)
+
+print('Маркетинг (яндекс директ) затраты', cost_marketing)
+
+print('Суммарная стоимость инвест запроса:', (FreelanceRate+Salary_designer/2+ Salary_manager/2+Salary_programmer/2+ServerCost_dev)*3 + cost_marketing)
+
+
